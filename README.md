@@ -114,4 +114,4 @@ PyMuPDF is the preferred backend. If it is unavailable, PDF Monster falls back t
 
 ## License
 
-No license has been specified yet.
+MIT. See [LICENSE](LICENSE).

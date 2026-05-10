@@ -9,7 +9,7 @@ description: Analyze PDF files by converting them into agent-readable text, OCR 
 
 Treat PDF files as source artifacts that must be converted into model-readable evidence before analysis. Do not create `output/`, `analysis/`, `pages/`, or similar folders in the user's working directory unless the user explicitly asks to save extracted artifacts.
 
-Use `scripts/analyze_pdf.py` first. It prints JSON to stdout, extracts text in-place, and writes only image artifacts to an OS temporary directory unless `--save-to` is provided.
+Use the bundled `scripts/analyze_pdf.py` first. Resolve this path from the skill root, not from the user's current working directory. It prints JSON to stdout, extracts text in-place, and writes only image artifacts to an OS temporary directory unless `--save-to` is provided.
 
 ## Quick Start
 
@@ -17,6 +17,12 @@ Run from this skill directory or replace `scripts/analyze_pdf.py` with its absol
 
 ```bash
 python3 scripts/analyze_pdf.py path/to/file.pdf --json
+```
+
+When the agent is running from another directory, use the absolute installed path. In Claude Code, `${CLAUDE_SKILL_DIR}` points at this skill directory:
+
+```bash
+python3 ${CLAUDE_SKILL_DIR}/scripts/analyze_pdf.py path/to/file.pdf --json
 ```
 
 ## Setup
@@ -107,7 +113,7 @@ For agents without a native skill loader, give them this folder and a short inst
 
 ```text
 Use pdf-monster/SKILL.md. For PDF tasks, run:
-python3 pdf-monster/scripts/analyze_pdf.py <pdf> --json
+python3 /absolute/path/to/pdf-monster/scripts/analyze_pdf.py <pdf> --json
 Read the JSON from stdout. Use temporary image paths only while analyzing, then clean them up.
 Do not create output folders in the user's working directory unless explicitly asked.
 ```

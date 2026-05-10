@@ -27,13 +27,21 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/analyze_pdf.py path/to/file.pdf --json
 
 ## Setup
 
-Python 3 is required. Install the recommended Python dependency with:
+Python 3 is required. Before first use, check whether PyMuPDF is already available:
 
 ```bash
-python3 -m pip install -r requirements.txt
+python3 -c "import fitz"
 ```
 
-Optional system tools improve coverage when PyMuPDF is unavailable or OCR is needed:
+If that fails and the agent is allowed to run pip/network installs, install the recommended dependency from this skill's `requirements.txt`. In Claude Code:
+
+```bash
+python3 -m pip install -r "${CLAUDE_SKILL_DIR}/requirements.txt"
+```
+
+In other agents, use the absolute path to this skill's `requirements.txt`.
+
+If dependency installation is not allowed, continue with the script anyway; it can use Poppler fallbacks when available. Optional system tools improve coverage when PyMuPDF is unavailable or OCR is needed, but do not install system packages automatically:
 
 - Poppler: `pdfinfo`, `pdftotext`, `pdftoppm`, `pdfimages`
 - Tesseract: `tesseract` plus any needed language data, such as `eng` or `kor`

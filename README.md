@@ -21,14 +21,19 @@ Clone or copy this folder into a skill directory supported by your agent:
 git clone <repo-url> pdf-monster
 ```
 
-Recommended Python dependency:
+Python 3 is required. The recommended Python dependency is installed by the agent on first use when it is missing:
 
 ```bash
-cd pdf-monster
+python3 -m pip install -r /absolute/path/to/pdf-monster/requirements.txt
+```
+
+If you run the CLI yourself, install it once from the repo root:
+
+```bash
 python3 -m pip install -r requirements.txt
 ```
 
-Optional system tools:
+Optional system tools are not installed automatically:
 
 - Poppler: `pdfinfo`, `pdftotext`, `pdftoppm`, `pdfimages`
 - Tesseract: `tesseract` plus language data such as `eng` or `kor`

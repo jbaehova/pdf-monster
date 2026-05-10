@@ -18,10 +18,10 @@ PDF Monster is built for coding agents that need to inspect PDFs without dumping
 Clone or copy this folder into a skill directory supported by your agent:
 
 ```bash
-git clone <repo-url> pdf-monster
+git clone https://github.com/jbaehova/pdf-monster.git pdf-monster
 ```
 
-Python 3 is required. The recommended Python dependency is installed by the agent on first use when it is missing:
+Python 3 is required. On first use, the skill tells the agent to check for PyMuPDF and install the recommended Python dependency when it is missing and pip/network installs are allowed:
 
 ```bash
 python3 -m pip install -r /absolute/path/to/pdf-monster/requirements.txt

@@ -1,6 +1,8 @@
 ---
 name: pdf-monster
 description: Analyze PDF files by converting them into agent-readable text, OCR text, page render images, and extracted embedded images without polluting the working directory. Use when an agent needs to read, summarize, inspect, compare, quote, or reason about PDFs, especially when the foundation model cannot ingest PDFs directly or when tables, figures, scans, screenshots, or layout matter.
+license: MIT
+compatibility: Requires Python 3. PyMuPDF is recommended; Poppler and Tesseract are optional for fallback extraction and OCR.
 ---
 
 # PDF Monster

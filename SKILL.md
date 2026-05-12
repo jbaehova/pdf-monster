@@ -1,8 +1,6 @@
 ---
 name: pdf-monster
 description: Analyze PDF files by converting them into agent-readable text, OCR text, page render images, and extracted embedded images without polluting the working directory. Use when an agent needs to read, summarize, inspect, compare, quote, or reason about PDFs, especially when the foundation model cannot ingest PDFs directly or when tables, figures, scans, screenshots, or layout matter.
-license: MIT
-compatibility: Requires Python 3. PyMuPDF is recommended; Poppler and Tesseract are optional for fallback extraction and OCR.
 ---
 
 # PDF Monster
@@ -66,6 +64,12 @@ For text-only inspection with no temporary image artifacts:
 python3 scripts/analyze_pdf.py path/to/file.pdf --render-pages none --no-extract-images --ocr never --json
 ```
 
+For slide decks or PDFs with repeated logos/icons, reduce embedded image noise while keeping page renders available:
+
+```bash
+python3 scripts/analyze_pdf.py path/to/file.pdf --render-pages all --min-image-area 10000 --dedupe-images --json
+```
+
 For selected pages:
 
 ```bash
@@ -81,10 +85,10 @@ python3 scripts/analyze_pdf.py path/to/file.pdf --save-to ./pdf-monster-artifact
 ## Reading Workflow
 
 1. Run `analyze_pdf.py` and capture stdout JSON.
-2. Check `warnings`, `page_count`, `artifact_root`, and each page's `text_chars`, `ocr_text_chars`, `render_path`, and `embedded_images`.
+2. Check `warnings`, `page_count`, `artifact_root`, `pages_needing_visual_review`, and each page's `text_chars`, `ocr_text_chars`, `render_path`, `embedded_images`, `needs_visual_review`, and `visual_review_reasons`.
 3. Use `text` as the primary evidence when it is complete enough.
 4. Inspect `ocr_text` when a page has little extracted text or appears scanned.
-5. Open `render_path` for pages where layout, charts, handwriting, equations, tables, screenshots, or visual placement could change the answer.
+5. Open `render_path` for pages marked `needs_visual_review`, and for pages where layout, charts, handwriting, equations, tables, screenshots, or visual placement could change the answer.
 6. Open `embedded_images[].path` when the PDF contains standalone figures that may be clearer than the page render.
 7. Cite page numbers from the manifest when answering.
 8. Delete temporary artifacts after finishing if `artifact_policy` is `temporary`.
@@ -96,6 +100,16 @@ rm -rf -- /tmp/pdf-monster-...
 ```
 
 Run it only after the image paths are no longer needed. Never delete a `--save-to` directory unless the user asks.
+
+## Finalization Checklist
+
+Before answering, complete these checks:
+
+- If `pages_needing_visual_review` is non-empty, inspect the relevant `render_path` or rerun selected pages with `--render-pages all` before making claims that depend on layout, diagrams, tables, or figures.
+- If rendered pages or extracted images were created with `artifact_policy: temporary`, run `cleanup_command` after the visual evidence is no longer needed.
+- Cite page numbers for document claims. If the evidence is incomplete because OCR or rendering is unavailable, say that clearly.
+- Do not expose names, student IDs, email addresses, signatures, or other personal data in summaries unless the user specifically asks for that information.
+- Do not paste raw JSON, temporary artifact paths, or long extracted text into the final answer unless the user asks for those details.
 
 ## Script Behavior
 

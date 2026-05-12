@@ -72,6 +72,12 @@ Visual or scanned PDFs:
 python3 scripts/analyze_pdf.py file.pdf --render-pages all --ocr auto --json
 ```
 
+Slide decks or PDFs with repeated logos/icons:
+
+```bash
+python3 scripts/analyze_pdf.py file.pdf --render-pages all --min-image-area 10000 --dedupe-images --json
+```
+
 Korean and English OCR:
 
 ```bash
@@ -105,10 +111,13 @@ The script prints JSON with fields such as:
 - `backend`
 - `artifact_root`
 - `cleanup_command`
+- `pages_needing_visual_review`
 - `pages[].text`
 - `pages[].ocr_text`
 - `pages[].render_path`
 - `pages[].embedded_images`
+- `pages[].needs_visual_review`
+- `pages[].visual_review_reasons`
 - `pages[].warnings`
 
 If temporary artifacts are created, the JSON includes a `cleanup_command`. Run it only after the image paths are no longer needed.

@@ -65,6 +65,46 @@ def truncate_text(text: str, limit: int) -> tuple[str, bool]:
     return text[:limit], True
 
 
+def image_dimensions_from_pymupdf_info(image_info: tuple[Any, ...]) -> tuple[int | None, int | None]:
+    if len(image_info) < 4:
+        return None, None
+    width = image_info[2] if isinstance(image_info[2], int) else None
+    height = image_info[3] if isinstance(image_info[3], int) else None
+    return width, height
+
+
+def image_area(width: int | None, height: int | None) -> int | None:
+    if width is None or height is None:
+        return None
+    return width * height
+
+
+def image_meets_area_threshold(width: int | None, height: int | None, threshold: int) -> bool:
+    if threshold <= 0:
+        return True
+    area = image_area(width, height)
+    return area is None or area >= threshold
+
+
+def count_new_significant_images(
+    image_infos: list[tuple[Any, ...]],
+    threshold: int,
+    seen_xrefs: set[int],
+) -> int:
+    count = 0
+    for image_info in image_infos:
+        xref = image_info[0] if image_info else None
+        if not isinstance(xref, int) or xref in seen_xrefs:
+            continue
+        if image_meets_area_threshold(
+            *image_dimensions_from_pymupdf_info(image_info),
+            threshold,
+        ):
+            seen_xrefs.add(xref)
+            count += 1
+    return count
+
+
 def parse_page_spec(spec: str, page_count: int) -> list[int]:
     if spec in {"all", ""}:
         return list(range(1, page_count + 1))
@@ -279,6 +319,9 @@ def extract_images_with_pymupdf(
     page_number: int,
     store: ArtifactStore,
     remaining: int,
+    min_image_area: int,
+    dedupe_images: bool,
+    seen_image_xrefs: set[int],
 ) -> tuple[list[dict[str, Any]], list[str]]:
     if remaining <= 0:
         return [], ["image limit reached"]
@@ -286,15 +329,21 @@ def extract_images_with_pymupdf(
     records: list[dict[str, Any]] = []
     warnings: list[str] = []
     for image_index, image_info in enumerate(page_obj.get_images(full=True), start=1):
+        xref = image_info[0]
+        if dedupe_images and xref in seen_image_xrefs:
+            continue
+        width, height = image_dimensions_from_pymupdf_info(image_info)
+        if not image_meets_area_threshold(width, height, min_image_area):
+            continue
         if len(records) >= remaining:
             warnings.append("image limit reached")
             break
-        xref = image_info[0]
         try:
             image = doc.extract_image(xref)
         except Exception as exc:
             warnings.append(f"could not extract image {image_index}: {exc}")
             continue
+        seen_image_xrefs.add(xref)
         ext = image.get("ext") or "bin"
         target = store.path("images", f"page-{page_number:03d}-img-{image_index:03d}.{ext}")
         target.write_bytes(image["image"])
@@ -333,6 +382,25 @@ def wants_page_from_selector(selector: str, page: int, text_chars: int, image_co
     return False
 
 
+def visual_review_reasons(
+    text_chars: int,
+    text_truncated: bool,
+    should_ocr: bool,
+    new_significant_image_count: int,
+    ocr_threshold: int,
+) -> list[str]:
+    reasons: list[str] = []
+    if text_chars < ocr_threshold:
+        reasons.append("sparse_text")
+    if text_truncated:
+        reasons.append("text_truncated")
+    if should_ocr:
+        reasons.append("ocr_attempted")
+    if new_significant_image_count > 0:
+        reasons.append(f"new_significant_embedded_images:{new_significant_image_count}")
+    return reasons
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Extract PDF text, OCR text, page renders, and embedded images for agents.",
@@ -362,10 +430,27 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--extract-images", dest="extract_images", action="store_true", default=True)
     parser.add_argument("--no-extract-images", dest="extract_images", action="store_false")
     parser.add_argument(
+        "--dedupe-images",
+        action="store_true",
+        help="Skip repeated PyMuPDF image xrefs after the first extracted copy",
+    )
+    parser.add_argument(
         "--image-limit",
         type=int,
         default=200,
         help="Maximum embedded images to extract across selected pages",
+    )
+    parser.add_argument(
+        "--min-image-area",
+        type=int,
+        default=0,
+        help="Skip embedded images smaller than this width*height pixel area when PyMuPDF is used",
+    )
+    parser.add_argument(
+        "--visual-review-image-area",
+        type=int,
+        default=10000,
+        help="Mark a page for visual review when it contains new embedded images at least this large",
     )
     parser.add_argument(
         "--max-page-text-chars",
@@ -391,6 +476,10 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
         raise RuntimeError("--dpi must be greater than 0")
     if args.image_limit < 0:
         raise RuntimeError("--image-limit must be 0 or greater")
+    if args.min_image_area < 0:
+        raise RuntimeError("--min-image-area must be 0 or greater")
+    if args.visual_review_image_area < 0:
+        raise RuntimeError("--visual-review-image-area must be 0 or greater")
     if args.ocr_threshold < 0:
         raise RuntimeError("--ocr-threshold must be 0 or greater")
     if args.command_timeout <= 0:
@@ -429,18 +518,27 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
 
         store = ArtifactStore(args.save_to)
         extracted_images_total = 0
+        seen_image_xrefs: set[int] = set()
+        seen_visual_review_xrefs: set[int] = set()
         page_records: list[dict[str, Any]] = []
 
         for page_number in selected_pages:
             page_warnings: list[str] = []
             raw_text = ""
             image_count_hint = 0
+            new_significant_image_count = 0
             page_obj = None
 
             if doc is not None:
                 page_obj = doc.load_page(page_number - 1)
                 raw_text = page_obj.get_text("text", sort=True) or ""
-                image_count_hint = len(page_obj.get_images(full=True))
+                page_images = page_obj.get_images(full=True)
+                image_count_hint = len(page_images)
+                new_significant_image_count = count_new_significant_images(
+                    page_images,
+                    args.visual_review_image_area,
+                    seen_visual_review_xrefs,
+                )
             else:
                 raw_text, warning = extract_text_with_poppler(
                     pdf_path, page_number, args.password, args.command_timeout
@@ -456,14 +554,25 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
                 remaining = args.image_limit - extracted_images_total
                 if doc is not None and page_obj is not None:
                     embedded_images, image_warnings = extract_images_with_pymupdf(
-                        doc, page_obj, page_number, store, remaining
+                        doc,
+                        page_obj,
+                        page_number,
+                        store,
+                        remaining,
+                        args.min_image_area,
+                        args.dedupe_images,
+                        seen_image_xrefs,
                     )
                 else:
+                    if args.min_image_area > 0:
+                        page_warnings.append("--min-image-area is ignored without PyMuPDF")
                     embedded_images, image_warnings = extract_images_with_poppler(
                         pdf_path, page_number, args.password, store, remaining, args.command_timeout
                     )
                 extracted_images_total += len(embedded_images)
                 page_warnings.extend(image_warnings)
+                if doc is None:
+                    new_significant_image_count = len(embedded_images)
 
             if args.render_pages in {"auto", "all", "none"}:
                 should_render = wants_page_from_selector(
@@ -506,6 +615,14 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
                 else:
                     page_warnings.append("OCR skipped because no page render is available")
 
+            page_visual_review_reasons = visual_review_reasons(
+                text_chars,
+                text_truncated,
+                should_ocr,
+                new_significant_image_count,
+                args.ocr_threshold,
+            )
+
             page_records.append(
                 {
                     "page": page_number,
@@ -517,6 +634,8 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
                     "ocr_text_truncated": ocr_text_truncated,
                     "render_path": render_path,
                     "embedded_images": embedded_images,
+                    "needs_visual_review": bool(page_visual_review_reasons),
+                    "visual_review_reasons": page_visual_review_reasons,
                     "warnings": page_warnings,
                 }
             )
@@ -535,6 +654,11 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
         "artifact_root": str(store.root) if store.root else None,
         "artifact_policy": store.policy,
         "cleanup_command": store.cleanup_command(),
+        "pages_needing_visual_review": [
+            page_record["page"]
+            for page_record in page_records
+            if page_record["needs_visual_review"]
+        ],
         "pages": page_records,
         "warnings": warnings,
     }

@@ -40,7 +40,7 @@
 
 ### Install As A Codex Plugin
 
-Add this repository as a Codex plugin marketplace:
+Add this repository to Codex:
 
 ```bash
 codex plugin marketplace add jbaehova/pdf-monster
@@ -54,20 +54,20 @@ For local development, add this checkout directly:
 codex plugin marketplace add /absolute/path/to/pdf-monster
 ```
 
-This repository is itself the installable plugin package. The required Codex files are:
+This repository is the installable Codex plugin package. Its plugin files follow the same root-level layout used by simple Codex plugins:
 
 ```text
-.agents/plugins/marketplace.json
 .codex-plugin/plugin.json
-SKILL.md
-scripts/analyze_pdf.py
+assets/pdf-monster.svg
+skills/pdf-monster/SKILL.md
+skills/pdf-monster/scripts/analyze_pdf.py
 ```
 
-After these files are pushed to GitHub, users can add the marketplace with `codex plugin marketplace add jbaehova/pdf-monster`.
+After these files are pushed to GitHub, users can add the plugin with `codex plugin marketplace add jbaehova/pdf-monster`.
 
 ### Install As A Standalone Skill
 
-Clone or copy this folder into a skill directory supported by your agent:
+Clone this repository, then copy or reference the skill package at `skills/pdf-monster`:
 
 ```bash
 git clone https://github.com/jbaehova/pdf-monster.git pdf-monster
@@ -76,13 +76,13 @@ git clone https://github.com/jbaehova/pdf-monster.git pdf-monster
 Python 3 is required. On first use, the skill tells the agent to check for PyMuPDF and install the recommended Python dependency when it is missing and pip/network installs are allowed:
 
 ```bash
-python3 -m pip install -r /absolute/path/to/pdf-monster/requirements.txt
+python3 -m pip install -r /absolute/path/to/pdf-monster/skills/pdf-monster/requirements.txt
 ```
 
 If you run the CLI yourself, install it once from the repo root:
 
 ```bash
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r skills/pdf-monster/requirements.txt
 ```
 
 Optional system tools are not installed automatically:
@@ -92,7 +92,7 @@ Optional system tools are not installed automatically:
 
 ## Use As An Agent Skill
 
-Install the whole folder, not just `SKILL.md`, because the skill uses `scripts/analyze_pdf.py`.
+Install the skill folder, not just `SKILL.md`, because the skill uses `scripts/analyze_pdf.py`.
 
 Common locations:
 
@@ -104,10 +104,10 @@ OpenClaw:      ~/.openclaw/skills/pdf-monster or <workspace>/skills/pdf-monster
 Hermes:        ~/.hermes/skills/pdf-monster
 ```
 
-For agents without native skill discovery, point custom instructions at the absolute path to `SKILL.md` and tell the agent to run:
+For agents without native skill discovery, point custom instructions at the absolute path to the nested `SKILL.md` and tell the agent to run:
 
 ```bash
-python3 /absolute/path/to/pdf-monster/scripts/analyze_pdf.py <file.pdf> --json
+python3 /absolute/path/to/pdf-monster/skills/pdf-monster/scripts/analyze_pdf.py <file.pdf> --json
 ```
 
 ## CLI Usage
@@ -115,43 +115,43 @@ python3 /absolute/path/to/pdf-monster/scripts/analyze_pdf.py <file.pdf> --json
 Basic analysis:
 
 ```bash
-python3 scripts/analyze_pdf.py file.pdf --json
+python3 skills/pdf-monster/scripts/analyze_pdf.py file.pdf --json
 ```
 
 Visual or scanned PDFs:
 
 ```bash
-python3 scripts/analyze_pdf.py file.pdf --render-pages all --ocr auto --json
+python3 skills/pdf-monster/scripts/analyze_pdf.py file.pdf --render-pages all --ocr auto --json
 ```
 
 Slide decks or PDFs with repeated logos/icons:
 
 ```bash
-python3 scripts/analyze_pdf.py file.pdf --render-pages all --min-image-area 10000 --dedupe-images --json
+python3 skills/pdf-monster/scripts/analyze_pdf.py file.pdf --render-pages all --min-image-area 10000 --dedupe-images --json
 ```
 
 Korean and English OCR:
 
 ```bash
-python3 scripts/analyze_pdf.py file.pdf --render-pages all --ocr auto --ocr-lang kor+eng --json
+python3 skills/pdf-monster/scripts/analyze_pdf.py file.pdf --render-pages all --ocr auto --ocr-lang kor+eng --json
 ```
 
 Text-only mode:
 
 ```bash
-python3 scripts/analyze_pdf.py file.pdf --render-pages none --no-extract-images --ocr never --json
+python3 skills/pdf-monster/scripts/analyze_pdf.py file.pdf --render-pages none --no-extract-images --ocr never --json
 ```
 
 Selected pages:
 
 ```bash
-python3 scripts/analyze_pdf.py file.pdf --pages 1,3-5 --render-pages all --json
+python3 skills/pdf-monster/scripts/analyze_pdf.py file.pdf --pages 1,3-5 --render-pages all --json
 ```
 
 Persist artifacts when you actually want files kept:
 
 ```bash
-python3 scripts/analyze_pdf.py file.pdf --save-to ./pdf-monster-artifacts --json
+python3 skills/pdf-monster/scripts/analyze_pdf.py file.pdf --save-to ./pdf-monster-artifacts --json
 ```
 
 ## Output

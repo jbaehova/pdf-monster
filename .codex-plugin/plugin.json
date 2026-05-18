@@ -17,7 +17,7 @@
     "agent-skill",
     "codex-plugin"
   ],
-  "skills": "./",
+  "skills": "./skills/",
   "interface": {
     "displayName": "PDF Monster",
     "shortDescription": "Read PDFs through text, OCR, page images, and extracted figures",

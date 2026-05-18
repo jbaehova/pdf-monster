@@ -10,7 +10,7 @@
       "name": "pdf-monster",
       "description": "Analyze PDFs through text extraction, OCR, page images, and embedded figures",
       "version": "0.1.0",
-      "source": "./",
+      "source": "./plugin",
       "author": {
         "name": "Johnny Bae",
         "url": "https://github.com/jbaehova"

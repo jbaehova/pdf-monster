@@ -59,10 +59,13 @@ This repository is the installable Codex plugin package. Its plugin files follow
 ```text
 .codex-plugin/plugin.json
 .claude-plugin/marketplace.json
+plugin -> .
 assets/pdf-monster.svg
 skills/pdf-monster/SKILL.md
 skills/pdf-monster/scripts/analyze_pdf.py
 ```
+
+`plugin` is a compatibility symlink to the repository root. It keeps the installable package at the root while giving Codex a non-empty marketplace source path.
 
 After these files are pushed to GitHub, users can add the plugin with `codex plugin marketplace add jbaehova/pdf-monster`.
 

@@ -58,6 +58,7 @@ This repository is the installable Codex plugin package. Its plugin files follow
 
 ```text
 .codex-plugin/plugin.json
+.claude-plugin/marketplace.json
 assets/pdf-monster.svg
 skills/pdf-monster/SKILL.md
 skills/pdf-monster/scripts/analyze_pdf.py

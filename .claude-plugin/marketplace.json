@@ -1,0 +1,20 @@
+{
+  "name": "pdf-monster",
+  "description": "PDF analysis plugin for agent-readable text, OCR text, page renders, and embedded images",
+  "owner": {
+    "name": "Johnny Bae",
+    "url": "https://github.com/jbaehova"
+  },
+  "plugins": [
+    {
+      "name": "pdf-monster",
+      "description": "Analyze PDFs through text extraction, OCR, page images, and embedded figures",
+      "version": "0.1.0",
+      "source": "./",
+      "author": {
+        "name": "Johnny Bae",
+        "url": "https://github.com/jbaehova"
+      }
+    }
+  ]
+}

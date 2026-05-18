@@ -1,8 +1,31 @@
-# PDF Monster
+<h1 align="center">PDF Monster</h1>
 
-Agent skill for turning PDFs into model-readable evidence: extracted text, optional OCR text, page render images, and embedded image files.
+<p align="center">
+  <strong>AI-agent PDF analysis skill and Codex plugin</strong>
+</p>
 
-PDF Monster is built for coding agents that need to inspect PDFs without dumping generated folders into the user's project. By default, it writes image artifacts to an OS temporary directory and prints a JSON manifest to stdout.
+<p align="center">
+  <em>PDFs in, model-readable evidence out.</em>
+</p>
+
+<p align="center">
+  <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white">
+  <img alt="PyMuPDF" src="https://img.shields.io/badge/PDF-PyMuPDF-DC2626?style=flat-square">
+  <img alt="OCR" src="https://img.shields.io/badge/OCR-Tesseract-0F766E?style=flat-square">
+  <img alt="Codex Plugin" src="https://img.shields.io/badge/Codex-Plugin-111827?style=flat-square">
+  <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-C5A800?style=flat-square">
+</p>
+
+<p align="center">
+  <a href="#what-it-does">Features</a> &bull;
+  <a href="#install">Install</a> &bull;
+  <a href="#cli-usage">CLI Usage</a> &bull;
+  <a href="#output">Output</a> &bull;
+  <a href="#use-as-an-agent-skill">Agent Skill</a> &bull;
+  <a href="#license">License</a>
+</p>
+
+> **PDF Monster** turns PDFs into model-readable evidence: extracted text, optional OCR text, rendered page images, and embedded image files. It is built for agents that need to inspect PDFs without dumping generated folders into the user's project.
 
 ## What It Does
 
@@ -14,6 +37,35 @@ PDF Monster is built for coding agents that need to inspect PDFs without dumping
 - Avoids creating `output/`, `pages/`, or similar folders unless explicitly requested
 
 ## Install
+
+### Install As A Codex Plugin
+
+Add this repository as a Codex plugin marketplace:
+
+```bash
+codex plugin marketplace add jbaehova/pdf-monster
+```
+
+Then install or enable **PDF Monster** from Codex's Plugins UI.
+
+For local development, add this checkout directly:
+
+```bash
+codex plugin marketplace add /absolute/path/to/pdf-monster
+```
+
+This repository is itself the installable plugin package. The required Codex files are:
+
+```text
+.agents/plugins/marketplace.json
+.codex-plugin/plugin.json
+SKILL.md
+scripts/analyze_pdf.py
+```
+
+After these files are pushed to GitHub, users can add the marketplace with `codex plugin marketplace add jbaehova/pdf-monster`.
+
+### Install As A Standalone Skill
 
 Clone or copy this folder into a skill directory supported by your agent:
 
